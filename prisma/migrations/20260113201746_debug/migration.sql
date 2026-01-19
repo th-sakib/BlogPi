@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "posts" ALTER COLUMN "thumbnail" DROP NOT NULL,
+ALTER COLUMN "tags" SET DEFAULT ARRAY[]::TEXT[];
