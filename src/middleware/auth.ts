@@ -10,7 +10,7 @@ declare global {
         email: string;
         name: string;
         emailVerified: boolean;
-        role: string;
+        role: string | undefined | null;
       };
     }
   }
