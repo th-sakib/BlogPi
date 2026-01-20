@@ -1,4 +1,4 @@
-import { Post } from "../../../generated/prisma/client";
+import { Post, PostStatus } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 
 const createPost = async (
@@ -120,8 +120,137 @@ const getPostById = async (payload: { id: string }) => {
   });
 };
 
+const getMyPost = async (authorId: string) => {
+  await prisma.user.findUniqueOrThrow({
+    where: {
+      id: authorId,
+      status: "ACTIVE",
+    },
+  });
+
+  // only get posts if the user is active
+  const result = await prisma.post.findMany({
+    where: {
+      authorId,
+    },
+    include: {
+      _count: {
+        select: {
+          comments: true,
+        },
+      },
+    },
+  });
+
+  return result;
+};
+
+/**
+ * USER: can update own posts excluding the isFeatured field
+ * ADMIN: can update everyone's post
+ */
+const updatePost = async (
+  postId: string,
+  data: Partial<Post>,
+  authorId: string,
+  isAdmin: boolean,
+) => {
+  const postData = await prisma.post.findUniqueOrThrow({
+    where: {
+      id: postId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+    },
+  });
+
+  if (!isAdmin && postData.authorId !== authorId) {
+    throw new Error("You don't have proper permissions.");
+  }
+
+  if (!isAdmin) {
+    delete data.isFeatured;
+  }
+
+  const result = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data,
+  });
+
+  return result;
+};
+
+const deletePost = async (
+  postId: string,
+  authorId: string,
+  isAdmin: boolean,
+) => {
+  const postData = await prisma.post.findUniqueOrThrow({
+    where: {
+      id: postId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+    },
+  });
+
+  if (!isAdmin && postData.authorId === authorId) {
+    throw new Error("You don't have permission");
+  }
+
+  const result = await prisma.post.delete({
+    where: {
+      id: postId,
+    },
+  });
+
+  return result;
+};
+
+const getStats = async () => {
+  // TODO: These can be cached because its too expensive to perform. explore the ways to cache this data
+  return await prisma.$transaction(async (tx) => {
+    const [
+      totalPost,
+      publishedPost,
+      draftPosts,
+      archivedPost,
+      totalComments,
+      totalViews,
+    ] = await Promise.all([
+      tx.post.count(),
+      tx.post.count({ where: { status: PostStatus.PUBLISHED } }),
+      tx.post.count({ where: { status: PostStatus.DRAFT } }),
+      tx.post.count({ where: { status: PostStatus.ARCHIVED } }),
+      tx.comment.count(),
+      tx.post.aggregate({
+        _sum: {
+          views: true,
+        },
+      }),
+    ]);
+
+    return {
+      totalPost,
+      publishedPost,
+      draftPosts,
+      archivedPost,
+      totalComments,
+      totalViews,
+    };
+  });
+};
+
 export const postService = {
   createPost,
   getAllProduct,
   getPostById,
+  getMyPost,
+  updatePost,
+  deletePost,
+  getStats,
 };

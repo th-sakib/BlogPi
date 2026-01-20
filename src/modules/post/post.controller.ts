@@ -112,8 +112,120 @@ const getPostById = async (req: Request, res: Response) => {
     });
   }
 };
+
+const getMyPost = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    console.log("adf");
+    if (!user) {
+      throw new Error("You are not authorized");
+    }
+    const result = await postService.getMyPost(user.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Your post retrieved successfully",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    const message =
+      err instanceof Error ? err.message : "Error while retrieving posts";
+    res.status(500).json({
+      success: false,
+      message: message,
+    });
+  }
+};
+
+const updatePost = async (req: Request, res: Response) => {
+  try {
+    const { postId } = req.params;
+    const user = req.user;
+    if (!user) {
+      throw new Error("You are not authorized");
+    }
+    const isAdmin = user.role === "ADMIN";
+
+    const result = await postService.updatePost(
+      postId as string,
+      req.body,
+      user.id,
+      isAdmin,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Your post retrieved successfully",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    const message =
+      err instanceof Error ? err.message : "Error while updating posts";
+    res.status(500).json({
+      success: false,
+      message: message,
+    });
+  }
+};
+
+const deletePost = async (req: Request, res: Response) => {
+  try {
+    const { postId } = req.params;
+    const user = req.user;
+    if (!user) {
+      throw new Error("You are not authorized");
+    }
+    const isAdmin = user.role === "ADMIN";
+
+    const result = await postService.deletePost(
+      postId as string,
+      user.id,
+      isAdmin,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "The post is deleted.",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    const message =
+      err instanceof Error ? err.message : "Error while deleting posts";
+    res.status(500).json({
+      success: false,
+      message: message,
+    });
+  }
+};
+
+const getStats = async (req: Request, res: Response) => {
+  try {
+    const result = await postService.getStats();
+
+    res.status(200).json({
+      success: true,
+      message: "Stats retrieved successfully",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    const message =
+      err instanceof Error ? err.message : "Error while retrieving stats";
+    res.status(500).json({
+      success: false,
+      message: message,
+    });
+  }
+};
 export const postController = {
   createPost,
   getAllPost,
   getPostById,
+  getMyPost,
+  updatePost,
+  deletePost,
+  getStats,
 };
