@@ -97,6 +97,23 @@ const getPostById = async (payload: { id: string }) => {
       where: {
         id: payload.id,
       },
+      include: {
+        comments: {
+          where: {
+            parentId: null,
+            status: "APPROVED",
+          },
+          orderBy: { createdAt: "desc" },
+          include: {
+            replies: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
+      },
     });
 
     return postData;

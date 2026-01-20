@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { postRouter } from "./modules/post/post.router";
+import { commentRouter } from "./modules/comment/comment.router";
 import { auth } from "./lib/auth";
 import cors from "cors";
 
@@ -13,9 +14,10 @@ app.use(
   cors({
     origin: "*",
     credentials: true,
-  })
+  }),
 );
 
 app.use("/api/v1/post", postRouter);
+app.use("/api/v1/comment", commentRouter);
 
 export default app;
