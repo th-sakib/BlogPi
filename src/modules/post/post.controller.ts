@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { postService } from "./post.service";
 import paginationSortingHelper from "../../helper/paginationSortingHelper";
 
-const createPost = async (req: Request, res: Response) => {
+const createPost = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -17,12 +17,13 @@ const createPost = async (req: Request, res: Response) => {
       message: "Post created successfully",
       data: result,
     });
-  } catch (err: any) {
-    console.log(err);
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+  } catch (err) {
+    // console.log(err);
+    // res.status(500).json({
+    //   success: false,
+    //   message: err.message,
+    // });
+    next(err);
   }
 };
 
